@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git 'https://github.com/ShardaEdke04/insurance-project'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Bulding Docker Image') {
+            steps {
+                sh 'docker build -t vish042001/insurance-image:latest .' 
+            }
+        }
+        stage('Login DockerHub') {
+            steps {
+                withCredentials([string(credentialsId: 'dockerhubpass', variable: 'dockerhubpass')]) {
+                sh 'docker login -u vish042001 -p ${dockerhubpass}'
+                } 
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                sh 'docker push vish042001/insurance-image:latest' 
+            }
+        }
+        stage('Deploying to K8S cluster') {
+            steps {
+                sh 'sudo kubectl apply -f k8sdeploymentfile.yml' 
+                sh 'sudo kubectl get all'
+            }
+        }
+        
+    }
+}
